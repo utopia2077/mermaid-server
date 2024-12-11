@@ -1,5 +1,5 @@
 # This stage builds the go executable.
-FROM golang:1.19.3-buster as go
+FROM golang:1.19.3-bullseye as go
 
 WORKDIR /root
 COPY ./ ./
@@ -8,9 +8,9 @@ RUN go build -o bin/app cmd/app/main.go
 
 
 # Final stage that will be pushed.
-FROM debian:buster-slim
+FROM debian:bullseye-slim
 
-FROM node:18.10.0-buster-slim as node
+FROM node:20.18-bullseye-slim as node
 
 WORKDIR /root
 

@@ -72,19 +72,27 @@ func (c cachingGenerator) Generate(diagram *Diagram) error {
 }
 
 // generate does the actual file generation.
+// generate 执行实际的文件生成操作
+// 它接收一个 Diagram 对象作为参数,生成对应的图表文件
 func (c cachingGenerator) generate(diagram *Diagram) error {
+	// 获取图表的唯一标识符
 	id, err := diagram.ID()
 	if err != nil {
 		return fmt.Errorf("cannot get diagram ID: %w", err)
 	}
 
+	// 构造输入和输出文件路径
+	// 输入文件以 .mmd 为扩展名
 	inPath := fmt.Sprintf("%s/%s.mmd", c.inPath, id)
+	// 输出文件以图表类型为扩展名(svg或png)
 	outPath := fmt.Sprintf("%s/%s.%s", c.outPath, id, diagram.imgType)
 
+	// 将图表描述内容写入输入文件
 	if err := ioutil.WriteFile(inPath, diagram.description, 0644); err != nil {
 		return fmt.Errorf("could not write to input file [%s]: %w", inPath, err)
 	}
 
+	// 检查 mermaid CLI 可执行文件是否存在
 	_, err = os.Stat(c.mermaidCLIPath)
 	if os.IsNotExist(err) {
 		return fmt.Errorf("mermaid executable does not exist: %w", err)
@@ -93,14 +101,17 @@ func (c cachingGenerator) generate(diagram *Diagram) error {
 		return fmt.Errorf("could not stat mermaid executable: %w", err)
 	}
 
+	// 构造 mermaid CLI 的命令行参数
 	args := []string{
 		"-i", inPath,
 		"-o", outPath,
 	}
+	// 如果配置了 puppeteer 配置文件路径,则添加相应参数
 	if c.puppeteerConfigPath != "" {
 		args = append(args, "-p", c.puppeteerConfigPath)
 	}
 
+	// 创建并执行 mermaid CLI 命令
 	cmd := exec.Command(c.mermaidCLIPath, args...)
 	var stdOut bytes.Buffer
 	var stdErr bytes.Buffer
@@ -109,8 +120,10 @@ func (c cachingGenerator) generate(diagram *Diagram) error {
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed when executing mermaid: %w: %s: %s", err, string(stdOut.Bytes()), string(stdErr.Bytes()))
 	}
+	// 记录生成结果的日志
 	log.Printf("Generated: %s: %s: %s", id, string(stdOut.Bytes()), string(stdErr.Bytes()))
 
+	// 设置图表的输出文件路径
 	diagram.Output = outPath
 
 	return nil
